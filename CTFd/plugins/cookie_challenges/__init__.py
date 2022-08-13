@@ -11,8 +11,8 @@ class CookieChallenge(Challenges):
     initial = db.Column(db.Integer, default=0)
     minimum = db.Column(db.Integer, default=0)
     decay = db.Column(db.Integer, default=0)
-    min_rounds = db.Column(db.Integer, default=0)
-    max_rounds = db.Column(db.Integer, default=1000000)
+    min_queries = db.Column(db.Integer, default=0)
+    max_queries = db.Column(db.Integer, default=1000000)
     scheme = db.Column(db.String(80))
     interval = db.Column(db.Integer)
 
@@ -53,7 +53,7 @@ class CTFdCookieChallenge(BaseChallenge):
     @classmethod
     def delete(cls, challenge):
         unregister_challenge(challenge.id)
-        super(CTFdCookieChallenge, cls).delete(cls, challenge)
+        super(CTFdCookieChallenge, cls).delete(challenge)
 
     @classmethod
     def read(cls, challenge):
@@ -66,8 +66,8 @@ class CTFdCookieChallenge(BaseChallenge):
             },
         }
         for attr in ("id", "name", "value", "initial", "decay", "minimum", "description",
-                "connection_info", "category", "state", "max_attempts", "type", "min_rounds",
-                "max_rounds", "scheme", "interval"):
+                "connection_info", "category", "state", "max_attempts", "type", "min_queries",
+                "max_queries", "scheme", "interval"):
             data[attr] = getattr(challenge, attr)
         _, enc, remaining = get_active_flag(challenge.id)
         data["remaining"] = remaining

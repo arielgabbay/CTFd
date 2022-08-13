@@ -1,50 +1,82 @@
 from CTFd.models import db, Challenges
 
-db = None
+import subprocess
+import datetime
+import os
+
+FLAGLEN = 16
+FLAGPOOL = "/opt/flagpool"
+SCHEMES = ["PKCS_1_5", "PKCS_OAEP"]
 
 class PoolFlag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    rounds = db.Column(db.Integer)
+    queries = db.Column(db.Integer)
     flag = db.Column(db.Text)
     enc = db.Column(db.Text)
     scheme = db.Column(db.String(80))
     expiry = db.Column(db.DateTime)
-    challenge_id = db.Column(None, db.ForeignKey("challenges.id"), primary_key=False, default=0)
+    challenge_id = db.Column(db.Integer, default=0)
 
     def __init__(self, *args, **kwargs):
         super(PoolFlag, self).__init__(**kwargs)
 
     def __repr__(self):
-        return "<PoolFlag {0} of {1} rounds, scheme {2}, expiry {3}>".format(self.flag, self.rounds, self.scheme, self.expiry)
+        return "<PoolFlag {0} of {1} queries, scheme {2}, expiry {3}>".format(self.flag, self.queries, self.scheme, self.expiry)
+
+def _collect_flags():
+    dt = datetime.datetime.now()
+    for fname in next(os.walk(FLAGPOOL))[2]:
+        fpath = os.path.join(FLAGPOOL, fname)
+        split = fname[:-len(".bin")].split("_")
+        flag = split[-1].lower()
+        queries = int(split[-2])
+        scheme = "_".join(split[:-2])
+        with open(os.path.join(fpath), "rb") as f:
+            enc = f.read().hex()
+        db.session.add(PoolFlag(queries, flag, enc, scheme, dt, 0))
+        os.unlink(fpath)
+    db.session.commit()
+
+def _get_flag_from_db(scheme, min_queries=0, max_queries=1000000):
+    candidates = PoolFlag.query.filter_by(challenge_id=0).filter_by(scheme=scheme).all()
+    for candidate in candidates:
+        if chal.min_queries <= candidate.queries <= chal.max_queries:
+            return candidate
+    return None
 
 def _new_flag_for_challenge(chal, prev_exp=None):
-    newflag = None
-    candidates = PoolFlag.query.filter_by(challenge_id=0).all()
-    for candidate in candidates:
-        if newflag is None:
-            newflag = candidate
-        if chal.min_rounds <= candidate.rounds <= chal.max_rounds:
-            newflag = candidate
-            break
+    newflag = _get_flag_from_db(chal.scheme, chal.min_queries, chal.max_queries)
+    if newflag is None:
+        _collect_flags()
+        newflag = _get_flag_from_db(chal.scheme, chal.min_queries, chal.max_queries)
+    if newflag is None:
+        newflag = _get_flag_from_db()
     assert newflag is not None, "No available flags!"
     newflag.challenge_id = chal.id
     newflag.expiry = datetime.datetime.now() + datetime.timedelta(minutes=chal.interval)
     if prev_exp is not None:
         since_expiry = (datetime.datetime.now() - prev_exp).total_seconds() % (chal.interval * 60)
         newflag.expiry -= datetime.timedelta(seconds=since_expiry)
+    PoolFlag.query.filter_by(flag=flag.flag).filter_by(challenge_id=0).delete()
     db.session.commit()
     return newflag
 
-def get_active_flag(challenge_id):
+def _get_active_flag(challenge_id):
     chal = Challenges.query.filter_by(id=challenge_id).first()
     assert chal is not None, "Challenge ID not found: {0}".format(challenge_id)
     flag = PoolFlag.query.filter_by(challenge_id=challenge_id).first()
-    if flag is not None and flag.expiry < datetime.datetime.now():
-        return flag.flag, flag.enc, int((flag.expiry - datetime.datetime.now()).total_seconds())
-    flag = _new_flag_for_challenge(chal)
+    if flag is None or flag.expiry >= datetime.datetime.now():
+        flag = _new_flag_for_challenge(chal)
+    return flag
+
+def get_active_flag(challenge_id):
+    flag = _get_active_flag(challenge_id)
     return flag.flag, flag.enc, int((flag.expiry - datetime.datetime.now()).total_seconds())
 
+def unregister_challenge(challenge_id):
+    PoolFlag.query.filter_by(challenge_id=challenge_id).delete()
+
 def load(app):
-    global db
-    db = app.db
     app.db.create_all()
+    filedir = os.path.dirname(__file__)
+    sp = subprocess.Popen(["python", os.path.join(filedir, "generate_flags.py"), os.path.join(filedir, "priv.key.pem"), str(FLAGLEN), FLAGPOOL])

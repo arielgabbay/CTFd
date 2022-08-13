@@ -1,0 +1,79 @@
+{% extends "admin/challenges/update.html" %}
+
+{% block value %}
+<div class="form-group">
+	<label for="value">Current Value<br>
+		<small class="form-text text-muted">
+			This is how many points the challenge is worth right now.
+		</small>
+	</label>
+	<input type="number" class="form-control chal-value" name="value" value="{{ challenge.value }}" disabled>
+</div>
+
+<div class="form-group">
+	<label for="value">Initial Value<br>
+		<small class="form-text text-muted">
+			This is how many points the challenge was worth initially.
+		</small>
+	</label>
+	<input type="number" class="form-control chal-initial" name="initial" value="{{ challenge.initial }}" required>
+</div>
+
+<div class="form-group">
+	<label for="value">Decay Limit<br>
+		<small class="form-text text-muted">
+			The amount of solves before the challenge reaches its minimum value
+		</small>
+	</label>
+	<input type="number" class="form-control chal-decay" name="decay" value="{{ challenge.decay }}" required>
+</div>
+
+<div class="form-group">
+	<label for="value">Minimum Value<br>
+		<small class="form-text text-muted">
+			This is the lowest that the challenge can be worth
+		</small>
+	</label>
+	<input type="number" class="form-control chal-minimum" name="minimum" value="{{ challenge.minimum }}" required>
+</div>
+
+<div class="form-group">
+	<label for="value">Minimal Number of Queries<br>
+		<small class="form-text text-muted">
+			This is the minimal number of queries to decrypt the flag.
+		</small>
+	</label>
+	<input type="number" class="form-control" name="min_queries" placeholder="Enter minimum value" required>
+</div>
+
+<div class="form-group">
+	<label for="value">Maximal Number of Queries<br>
+		<small class="form-text text-muted">
+			This is the maximal number of queries to decrypt the flag.
+		</small>
+	</label>
+	<input type="number" class="form-control" name="max_queries" placeholder="Enter maximum value" required>
+</div>
+
+<div class="form-group">
+	<label for="value">Padding Scheme<br>
+		<small class="form-text text-muted">
+			This is the padding scheme to use when encrypting flags.
+		</small>
+	</label>
+	<br>
+	<select name="scheme">
+		<option value="PKCS_1_5" selected>PKCS 1.5</option>
+		<option value="PKCS_OAEP">PKCS OAEP</option>
+	</select>
+</div>
+
+<div class="form-group">
+	<label for="value">Renewal Interval<br>
+		<small class="form-text text-muted">
+			This is the amount of time (in minutes) that a flag is valid (0 for no flag invalidation).
+		</small>
+	</label>
+	<input type="number" class="form-control" name="interval" placeholder="Enter interval" required>
+</div>
+{% endblock %}
