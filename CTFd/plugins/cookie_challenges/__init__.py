@@ -4,7 +4,7 @@ import math
 
 from CTFd.models import Challenges, db, Solves
 from CTFd.plugins.challenges import BaseChallenge, CHALLENGE_CLASSES
-from CTFd.plugins.cookie_keys import get_active_flag, unregister_challenge, attempt_flag
+from CTFd.plugins.cookie_keys import get_active_flag, unregister_challenge, attempt_flag, update_interval
 from CTFd.plugins import register_plugin_assets_directory
 from CTFd.utils.modes import get_model
 
@@ -85,11 +85,16 @@ class CTFdCookieChallenge(BaseChallenge):
     def update(cls, challenge, request):
         data = request.form or request.get_json()
 
+        needs_update = (challenge.interval != int(data["interval"]))
+
         for attr, value in data.items():
             # We need to set these to floats so that the next operations don't operate on strings
             if attr in ("initial", "minimum", "decay", "min_queries", "max_queries", "interval"):
                 value = float(value)
             setattr(challenge, attr, value)
+
+        if needs_update:
+            update_interval(challenge.id, int(data["interval"]))
 
         return CTFdCookieChallenge.calculate_value(challenge)
 
@@ -102,7 +107,7 @@ class CTFdCookieChallenge(BaseChallenge):
     @classmethod
     def attempt(cls, challenge, request):
         data = request.form or request.get_json()
-        submission = data["submission"].strip().lower()
+        submission = data["submission"].strip()
         return attempt_flag(challenge.id, submission)
 
     @classmethod
@@ -125,6 +130,7 @@ class CTFdCookieChallenge(BaseChallenge):
                 "max_queries", "scheme", "interval"):
             data[attr] = getattr(challenge, attr)
         _, enc, remaining = get_active_flag(challenge.id)
+        print("Remaining: ", remaining)
         data["remaining"] = remaining
         data["enc"] = enc
         return data

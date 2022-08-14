@@ -483,7 +483,8 @@ class Challenge(Resource):
         response["tags"] = tags
         response["hints"] = hints
 
-        if chal.id == "cookie":
+        if chal.type == "cookie":
+            print(response["enc"], response["remaining"])
             response["view"] = render_template(
                 chal_class.templates["view"].lstrip("/"),
                 solves=solve_count,
@@ -495,6 +496,7 @@ class Challenge(Resource):
                 attempts=attempts,
                 remaining=response["remaining"],
                 enc=response["enc"],
+                encstr='"' + response["enc"] + '"',
                 challenge=chal,
             )
         else:

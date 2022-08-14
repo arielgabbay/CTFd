@@ -54,7 +54,10 @@ def _new_flag_for_challenge(chal, prev_exp=None):
         newflag = _get_flag_from_db(chal.scheme)
     assert newflag is not None, "No available flags!"
     newflag.challenge_id = chal.id
-    newflag.expiry = datetime.datetime.now() + datetime.timedelta(minutes=chal.interval)
+    if chal.interval > 0:
+        newflag.expiry = datetime.datetime.now() + datetime.timedelta(minutes=chal.interval)
+    else:
+        newflag.expiry = datetime.datetime(3000, 1, 1)
     if prev_exp is not None:
         since_expiry = (datetime.datetime.now() - prev_exp).total_seconds() % (chal.interval * 60)
         newflag.expiry -= datetime.timedelta(seconds=since_expiry)
@@ -74,14 +77,23 @@ def get_active_flag(challenge_id):
     flag = _get_active_flag(challenge_id)
     return flag.flag, flag.enc, int((flag.expiry - datetime.datetime.now()).total_seconds())
 
-def attempt_flag(challenge_id, val):
+def update_interval(challenge_id, interval):
     flag = _get_active_flag(challenge_id)
-    if flag.flag == val:
+    if interval > 0:
+        flag.expiry = datetime.datetime.now() + datetime.timedelta(minutes=interval)
+    else:
+        flag.expiry = datetime.datetime(3000, 1, 1)
+
+def attempt_flag(challenge_id, val):
+    if len(val) != FLAGLEN * 2 or not all(c.isalnum() for c in val):
+        return False, "Invalid flag value (should be a hex string of length 32; 16 encoded bytes)"
+    flag = _get_active_flag(challenge_id)
+    if flag.flag == val.lower():
         return True, "Correct"
-    old_flag = PoolFlag.query.filter_by(challenge_id=challenge_id).filter_by(flag=flag).first()
+    old_flag = PoolFlag.query.filter_by(challenge_id=challenge_id).filter_by(flag=val).first()
     if old_flag is not None:
         return False, "This flag has expired"
-    return False, "Invalid flag"
+    return False, "Incorrect flag"
 
 def unregister_challenge(challenge_id):
     PoolFlag.query.filter_by(challenge_id=challenge_id).delete()

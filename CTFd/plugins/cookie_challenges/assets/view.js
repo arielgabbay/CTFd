@@ -35,3 +35,28 @@ CTFd._internal.challenge.submit = function(preview) {
     return response;
   });
 };
+
+function encodeHex(hex) {
+    for (var bytes = [], c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+    for (var output = [], i = 0; i < bytes.length; i++) {
+      var current = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
+      output.push("%");
+      output.push((current >>> 4).toString(16));
+      output.push((current & 0xF).toString(16));
+    }
+    return output.join("");
+}
+
+function downloadFlag(flag) {
+  var element = document.createElement('a');
+  element.setAttribute('href', 'data:application/octet-stream;charset=utf-8,' + encodeHex(flag));
+  element.setAttribute('download', "flag.bin");
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+}
