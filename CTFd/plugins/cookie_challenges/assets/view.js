@@ -51,7 +51,7 @@ function encodeHex(hex) {
 function downloadFlag(flag) {
   var element = document.createElement('a');
   element.setAttribute('href', 'data:application/octet-stream;charset=utf-8,' + encodeHex(flag));
-  element.setAttribute('download', "flag.bin");
+  element.setAttribute('download', "enc.bin");
 
   element.style.display = 'none';
   document.body.appendChild(element);
