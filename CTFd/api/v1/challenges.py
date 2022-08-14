@@ -483,17 +483,32 @@ class Challenge(Resource):
         response["tags"] = tags
         response["hints"] = hints
 
-        response["view"] = render_template(
-            chal_class.templates["view"].lstrip("/"),
-            solves=solve_count,
-            solved_by_me=solved_by_user,
-            files=files,
-            tags=tags,
-            hints=[Hints(**h) for h in hints],
-            max_attempts=chal.max_attempts,
-            attempts=attempts,
-            challenge=chal,
-        )
+        if chal.id == "cookie":
+            response["view"] = render_template(
+                chal_class.templates["view"].lstrip("/"),
+                solves=solve_count,
+                solved_by_me=solved_by_user,
+                files=files,
+                tags=tags,
+                hints=[Hints(**h) for h in hints],
+                max_attempts=chal.max_attempts,
+                attempts=attempts,
+                remaining=response["remaining"],
+                enc=response["enc"],
+                challenge=chal,
+            )
+        else:
+            response["view"] = render_template(
+                chal_class.templates["view"].lstrip("/"),
+                solves=solve_count,
+                solved_by_me=solved_by_user,
+                files=files,
+                tags=tags,
+                hints=[Hints(**h) for h in hints],
+                max_attempts=chal.max_attempts,
+                attempts=attempts,
+                challenge=chal,
+            )
 
         db.session.close()
         return {"success": True, "data": response}

@@ -43,7 +43,7 @@
 			This is the minimal number of queries to decrypt the flag.
 		</small>
 	</label>
-	<input type="number" class="form-control" name="min_queries" placeholder="Enter minimum value" required>
+	<input type="number" class="form-control" name="min_queries" value="{{ challenge.min_queries }}" placeholder="Enter minimum value" required>
 </div>
 
 <div class="form-group">
@@ -52,7 +52,7 @@
 			This is the maximal number of queries to decrypt the flag.
 		</small>
 	</label>
-	<input type="number" class="form-control" name="max_queries" placeholder="Enter maximum value" required>
+	<input type="number" class="form-control" name="max_queries" value="{{ challenge.max_queries }}" placeholder="Enter maximum value" required>
 </div>
 
 <div class="form-group">
@@ -62,8 +62,8 @@
 		</small>
 	</label>
 	<br>
-	<select name="scheme">
-		<option value="PKCS_1_5" selected>PKCS 1.5</option>
+	<select name="scheme" value="{{ challenge.scheme }}">
+		<option value="PKCS_1_5">PKCS 1.5</option>
 		<option value="PKCS_OAEP">PKCS OAEP</option>
 	</select>
 </div>
@@ -74,6 +74,6 @@
 			This is the amount of time (in minutes) that a flag is valid (0 for no flag invalidation).
 		</small>
 	</label>
-	<input type="number" class="form-control" name="interval" placeholder="Enter interval" required>
+	<input type="number" class="form-control" name="interval" value="{{ challenge.interval }}" placeholder="Enter interval" required>
 </div>
 {% endblock %}
