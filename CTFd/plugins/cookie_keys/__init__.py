@@ -39,7 +39,7 @@ def _collect_flags(scheme, flag_category):
             queries = int(split[-2])
             with open(os.path.join(fpath), "rb") as f:
                 enc = f.read().hex()
-            db.session.add(PoolFlag(queries=queries, flag=flag, enc=enc, scheme=padding, expiry=dt, challenge_id=0, category=category))
+            db.session.add(PoolFlag(queries=queries, flag=flag, enc=enc, scheme=scheme, expiry=dt, challenge_id=0, category=category))
             os.unlink(fpath)
     db.session.commit()
 
