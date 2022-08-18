@@ -98,7 +98,7 @@ def attempt_flag(challenge_id, val):
     if len(val) != FLAGLEN * 2 or not all(c.isalnum() for c in val):
         return False, "Invalid flag value (should be a hex string of length 32; 16 encoded bytes)"
     flag = _get_active_flag(challenge_id)
-    if flag.flag == val.lower():
+    if flag.flag.lstrip("0") == val.lower().lstrip("0"):
         return True, "Correct"
     old_flag = PoolFlag.query.filter_by(challenge_id=challenge_id).filter_by(flag=val).first()
     if old_flag is not None:

@@ -130,7 +130,6 @@ class CTFdCookieChallenge(BaseChallenge):
                 "max_queries", "scheme", "interval"):
             data[attr] = getattr(challenge, attr)
         _, enc, remaining = get_active_flag(challenge.id)
-        print("Remaining: ", remaining)
         data["remaining"] = remaining
         data["enc"] = enc
         return data
