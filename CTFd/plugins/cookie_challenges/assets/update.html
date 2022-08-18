@@ -62,9 +62,10 @@
 		</small>
 	</label>
 	<br>
-	<select name="scheme" value="{{ challenge.scheme }}">
-		<option value="PKCS_1_5">PKCS 1.5</option>
-		<option value="PKCS_OAEP">PKCS OAEP</option>
+	<select name="scheme">
+		<option value="PKCS_1_5" {% if challenge.scheme == 'PKCS_1_5' %}selected{% endif %}>PKCS 1.5</option>
+		<option value="PKCS_OAEP" {% if challenge.scheme == 'PKCS_OAEP' %}selected{% endif %}>PKCS OAEP</option>
+		<option value="NOPADDING" {% if challenge.scheme == 'NOPADDING' %}selected{% endif %}>No padding</option>
 	</select>
 </div>
 

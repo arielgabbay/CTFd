@@ -484,7 +484,6 @@ class Challenge(Resource):
         response["hints"] = hints
 
         if chal.type == "cookie":
-            print(response["enc"], response["remaining"])
             response["view"] = render_template(
                 chal_class.templates["view"].lstrip("/"),
                 solves=solve_count,

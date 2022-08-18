@@ -190,8 +190,6 @@ def bleichenbacher_attack(k, key, c, oracle, verbose=False):
 
     c = int.from_bytes(c, byteorder="big")
     s_0, c_0 = blinding(k, key, c, oracle)
-    if total_queries != 1:
-        return None
 
     m = [(2 * B, 3 * B - 1)]
 
