@@ -25,21 +25,22 @@ class PoolFlag(db.Model):
     def __repr__(self):
         return "<PoolFlag {0} of {1} queries, scheme {2}, expiry {3}>".format(self.flag, self.queries, self.scheme, self.expiry)
 
-def _collect_flags():
+def _collect_flags(scheme, flag_category):
     dt = datetime.datetime.now()
     for category in next(os.walk(FLAGPOOL))[1]:
+        if flag_category is not None and category != flag_category:
+            continue
         catdir = os.path.join(FLAGPOOL, category)
-        for padding in next(os.walk(catdir))[1]:
-            paddir = os.path.join(catdir, padding)
-            for fname in next(os.walk(paddir))[2]:
-                fpath = os.path.join(paddir, fname)
-                split = fname[:-len(".bin")].split("_")
-                flag = split[-1].lower()
-                queries = int(split[-2])
-                with open(os.path.join(fpath), "rb") as f:
-                    enc = f.read().hex()
-                db.session.add(PoolFlag(queries=queries, flag=flag, enc=enc, scheme=padding, expiry=dt, challenge_id=0, category=category))
-                os.unlink(fpath)
+        paddir = os.path.join(catdir, scheme)
+        for fname in next(os.walk(paddir))[2]:
+            fpath = os.path.join(paddir, fname)
+            split = fname[:-len(".bin")].split("_")
+            flag = split[-1].lower()
+            queries = int(split[-2])
+            with open(os.path.join(fpath), "rb") as f:
+                enc = f.read().hex()
+            db.session.add(PoolFlag(queries=queries, flag=flag, enc=enc, scheme=padding, expiry=dt, challenge_id=0, category=category))
+            os.unlink(fpath)
     db.session.commit()
 
 def _get_flag_from_db(scheme, category, min_queries=0, max_queries=1000000):
@@ -57,7 +58,7 @@ def _new_flag_for_challenge(chal, prev_exp=None):
     flag_category = chal.category if chal.category in ("Bleichenbacher", "Manger") else None
     newflag = _get_flag_from_db(chal.scheme, flag_category, chal.min_queries, chal.max_queries)
     if newflag is None:
-        _collect_flags()
+        _collect_flags(chal.scheme, flag_category)
         newflag = _get_flag_from_db(chal.scheme, flag_category, chal.min_queries, chal.max_queries)
     if newflag is None:
         newflag = _get_flag_from_db(chal.scheme, None)
@@ -107,10 +108,17 @@ def attempt_flag(challenge_id, val):
 def unregister_challenge(challenge_id):
     PoolFlag.query.filter_by(challenge_id=challenge_id).delete()
 
+def mkdir_lazy(path):
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
 def load(app):
     app.db.create_all()
     filedir = os.path.dirname(__file__)
+    mkdir_lazy(FLAGPOOL)
     for category, padding in (("Bleichenbacher", "PKCS_1_5"), ("Bleichenbacher", "NOPADDING"),
                               ("Manger", "PKCS_OAEP"), ("Manger", "NOPADDING")):
         pooldir = os.path.join(FLAGPOOL, category, padding)
+        mkdir_lazy(os.path.join(FLAGPOOL, category))
+        mkdir_lazy(os.path.join(FLAGPOOL, category, padding))
         sp = subprocess.Popen(["python", os.path.join(filedir, "generate_flags.py"), os.path.join(filedir, "priv.key.pem"), str(FLAGLEN), pooldir, category, padding])

@@ -2,6 +2,7 @@
 from Crypto.PublicKey import RSA
 import Crypto.Cipher.PKCS1_v1_5 as PKCS_1_5
 import Crypto.Cipher.PKCS1_OAEP as PKCS_OAEP
+import time
 import random
 import os
 import multiprocessing
@@ -19,7 +20,7 @@ class RsaEnc:
     def new(cls, key):
         return cls(key)
     
-    def encrypt(buf):
+    def encrypt(self, buf):
         m = int.from_bytes(buf, byteorder="big")
         return pow(m, self.key.e, self.key.n).to_bytes(self.key.size_in_bytes(), byteorder="big")
 
@@ -53,7 +54,7 @@ def main():
             time.sleep(1)
         results = []
         for _ in range(NUM_WORKERS):
-            results.append(pool.apply_async(gen_flags, (keyfile, flaglen, flagdir, padding, category)))
+            results.append(pool.apply_async(gen_flags, (keyfile, flaglen, flagdir, padding_str, category)))
         for result in results:
             result.wait()
 
