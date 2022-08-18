@@ -11,40 +11,49 @@ import sys
 import bleichenbacher
 import manger
 
-def gen_flags(keyfile, flaglen, flagdir, count_func, pref):
-    if pref == "PKCS_1_5":
-        pkcs_class = PKCS_1_5
-    else:
-        pkcs_class = PKCS_OAEP
+class RsaEnc:
+    def __init__(self, key):
+        self.key = key
+
+    @classmethod
+    def new(cls, key):
+        return cls(key)
+    
+    def encrypt(buf):
+        m = int.from_bytes(buf, byteorder="big")
+        return pow(m, self.key.e, self.key.n).to_bytes(self.key.size_in_bytes(), byteorder="big")
+
+ENC_CLASSES = {"PKCS_1_5": PKCS_1_5, "PKCS_OAEP": PKCS_OAEP, "NOPADDING": RsaEnc}
+COUNT_FUNCS = {"Bleichenbacher": bleichenbacher.count_rounds, "Manger": manger.count_rounds}
+
+MAX_FLAGS = 100
+
+def gen_flags(keyfile, flaglen, flagdir, padding, category):
+    pkcs_class = ENC_CLASSES[padding]
+    count_func = COUNT_FUNCS[category]
     with open(keyfile, "rb") as f:
         key = RSA.import_key(f.read())
     pkcs = pkcs_class.new(key)
     flag = os.urandom(flaglen)
     enc = pkcs.encrypt(flag)
     rounds = count_func(key, enc, key.size_in_bytes())
-    with open(os.path.join(flagdir, "_".join((pref, str(rounds), flag.hex()))) + ".bin", "wb") as f:
+    with open(os.path.join(flagdir, "_".join((str(rounds), flag.hex()))) + ".bin", "wb") as f:
         f.write(enc)
 
-MAX_FLAGS = 100
 NUM_WORKERS = 2
 
 def main():
-    keyfile, flaglen, flagdir = sys.argv[1:]
+    keyfile, flaglen, flagdir, category, padding_str = sys.argv[1:]
     flaglen = int(flaglen)
     if not os.path.exists(flagdir):
         os.mkdir(flagdir)
-    pool = multiprocessing.Pool(processes=NUM_WORKERS * 2)
-    args = []
-    for count_func, pref in ((bleichenbacher.count_rounds, "PKCS_1_5"),
-                             (manger.count_rounds, "PKCS_OAEP")):
-        args.append((keyfile, flaglen, flagdir, count_func, pref))
+    pool = multiprocessing.Pool(processes=NUM_WORKERS)
     while True:
-        if len(os.listdir(flagdir)) >= MAX_FLAGS * 2:
+        if len(os.listdir(flagdir)) >= MAX_FLAGS:
             time.sleep(1)
         results = []
         for _ in range(NUM_WORKERS):
-            for arg in args:
-                results.append(pool.apply_async(gen_flags, arg))
+            results.append(pool.apply_async(gen_flags, (keyfile, flaglen, flagdir, padding, category)))
         for result in results:
             result.wait()
 
